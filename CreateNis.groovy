@@ -14,7 +14,8 @@ def values = value.split('h1')
 for(def x = 0 ; x < values.size(); x++){
     arr = values as String[]
 }
-logger.info('Valor de arr Francisco->'+arr[2].split(/\s*,\s*/))
+
+logger.info('Valor de arr->'+arr[2].split(/\s*,\s*/))
 for(def y = 0; y < arr.size(); y++){
     //logger.info('arr->'+arr[y].split(''))
     arry[y] = arr[y].split(/\s*,\s*/) as String[]
@@ -47,5 +48,5 @@ for(def x = 1 ; x < values.size(); x++){
         }
     }
 }else{
-    logger.info('No esta vacio')
+    logger.info('No esta vacio y el valor NIS de '+result.body.fields.creator.displayName+' es '+result.body.fields.customfield_10037)
 }
