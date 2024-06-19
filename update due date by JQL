@@ -1,0 +1,76 @@
+int contCustom
+def bodyJson
+def result2 = post("/rest/api/2/search/")
+       .header('Content-Type', 'application/json')
+       .header('accept', 'application/json')
+       .queryString("startAt", 0)
+       .queryString("maxResults", 2)
+       .body('{"jql":"project = ECOM and duedate IS EMPTY and type = Market"}')
+       .asJson()
+
+if (result2.status == 200){
+    bodyJson = result2.body
+    def issues = bodyJson.getObject().get("issues")
+    contCustom = issues.size()
+} else {
+     contCustom = 0
+}
+
+if (contCustom > 0){
+     logger.info('XXXXXXXXXXXX')
+}
+    logger.info('Solo size->'+bodyJson.object.total)
+
+int size =bodyJson.object.total
+    logger.info('Solo size->'+size)
+for(def x=0; x<size;x++){
+    logger.info('Antes issueKey')
+    def issueKey = "ECOM-497"
+    if (bodyJson.object.issues[x])  issueKey = bodyJson.object.issues[x].key
+    logger.info('Despues issueKey->'+issueKey)
+
+def issue
+def result = get('/rest/api/2/issue/' + issueKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (result.status == 200){
+    issue = result.body
+} else {
+    return "Failed to find issue: Status: ${result.status} ${result.body}"
+}
+
+def parent = issue.fields.parent.key
+
+def padre = get('/rest/api/2/issue/' + parent)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (padre.status == 200){
+    issueP = padre.body
+} else {
+    return "Failed to find issue: Status: ${padre.status} ${padre.body}"
+}
+if(issueP.fields.duedate){
+println('issueP.fields.duedate->'+issueP.fields.duedate+' de Market('+issueKey+') y Epic('+issueP.key+')')
+if(issueP.fields.duedate){
+    def data = issueP.fields.duedate
+    def update = put("/rest/api/2/issue/${issueKey}") 
+        .queryString("overrideScreenSecurity", Boolean.TRUE) 
+        .header('Content-Type', 'application/json')
+        .body([
+            fields: [
+                    duedate: data
+            ]
+        ])
+        .asString()
+
+    if (update.status == 204) { 
+        return 'Success'
+    } else {
+        return "${update.status}: ${update.body}"
+    }
+}
+}else{
+    logger.info('La epica no tiene duedate asi que no se hace nada')
+}
+}
+return bodyJson.object.issues[0].key
