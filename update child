@@ -1,0 +1,50 @@
+def issueKey = issue.key // 'MSB-2034'
+/*
+def issue
+def result = get('/rest/api/2/issue/' + issueKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (result.status == 200){
+    issue = result.body
+} else {
+    return "Failed to find issue: Status: ${result.status} ${result.body}"
+}
+*/
+def motherKey = issue.fields.parent.key
+def MotherIssue
+def mother = get('/rest/api/2/issue/' + motherKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (mother.status == 200){
+    MotherIssue = mother.body
+} else {
+    return "Failed to find issue: Status: ${mother.status} ${mother.body}"
+}
+
+def update = put("/rest/api/2/issue/${issueKey}") 
+    .queryString("overrideScreenSecurity", Boolean.TRUE) 
+    .header('Content-Type', 'application/json')
+    .body([
+        fields: [
+                customfield_10318 :  MotherIssue.fields.customfield_10318, // affected country
+                fixVersions: MotherIssue.fields.fixVersions,
+                //versions: issue.fields.versions,
+                customfield_10015 : MotherIssue.fields.customfield_10015, // Start date
+                components :MotherIssue.fields.components,
+                customfield_10440 :MotherIssue.fields.customfield_10440 ,// Brand
+                labels : MotherIssue.fields.labels,
+                customfield_10781: MotherIssue.fields.customfield_10781, //Squad Code
+                customfield_10762: MotherIssue.fields.customfield_10762, // HST Rollout
+                customfield_10820: MotherIssue.fields.customfield_10820, // Business priority
+                customfield_10845: MotherIssue.fields.customfield_10845, // Aprox rollout
+                customfield_10762: MotherIssue.fields.customfield_10762, // Product description
+                customfield_10844: MotherIssue.fields.customfield_10844  // Rollout Material
+        ]
+    ])
+    .asString()
+
+if (update.status == 204) { 
+    return 'Success'
+} else {
+    return "${update.status}: ${update.body}"
+}
