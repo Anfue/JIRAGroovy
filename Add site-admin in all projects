@@ -1,0 +1,60 @@
+def proyectos = [
+    "SFCTI", "DASH", "AEM", "A5M", "IAEM", "ASBB", "AA", "ASF", "AN", "AB", "ANDRS", "APP", "ATENEA", "AK",
+    "APDP", "AVP", "BOS", "BIT", "CVC", "CAM", "CCSHR", "CSA", "CR", "STA", "STR", "CDI", "CMDAY", "COS", "CG",
+    "UC85", "CA", "CAR", "CCON", "CDS", "CFLC", "CM", "CXD", "CPT", "DS", "DTS", "ZMB", "DAT", "UC04", "UC0006",
+    "UC158", "DTRM", "UC76", "WS", "DWSM", "DOS", "DSDWG", "DIL", "WC", "DMP", "ECOM", "EC", "FL", "FAST", "FLCC",
+    "FI", "FEN", "COV", "GC", "GTMS", "GQDPS", "GXAG", "HSIP", "KIOS", "HB", "HTEAM", "HVC", "ISI", "ITSM", "JM",
+    "KGAS", "LPM", "MSB", "MAR", "MCG", "MCC", "MYCO", "MSA", "NE", "NTD", "NDC", "OLA", "OCB", "OCD", "OCF", "OCQ",
+    "CCS", "CES", "CRS", "OER", "OI", "SEA", "OLD", "VRS", "OSP", "OW", "OVS", "PCCOVS", "PT", "PLAT", "ART", "CCC",
+    "PM", "POR", "PB", "PBNEXT", "PA", "PCC", "PMGMT", "PJ", "PRUEB", "QA", "QTS", "JPT", "QST", "QS", "RCC", "RITA",
+    "RR", "RSOS", "SSM", "SBS", "SCV", "SD", "SCR", "SCD", "ID", "SIC", "SMC", "WSMC", "SNW", "MO", "SLBCS", "SERVD",
+    "SDVX", "SMES", "SSF3", "SF", "SMW", "SMAR", "SC", "SL", "SOS", "STOR", "SUN", "TO", "TEST", "TS", "TIM", "TDJ",
+    "TTS", "UGTPV", "UXSEAT", "VPD", "WDSS", "WCC", "WF", "ZAP", "OSAS"
+]
+
+def adminGroupId = "bf7cc1e5-750c-494e-bfdd-9ac2faf6d5d7"
+def array = []
+
+for (def y = 0; y < proyectos.size(); y++) {
+    def projectKey = proyectos[y]
+    def result = get("/rest/api/3/project/${projectKey}/roledetails").asObject(List).body
+
+    if (result == null) {
+        println("No se pudo obtener los detalles del rol para el proyecto ${projectKey}.")
+        continue
+    }
+
+    boolean roleFound = false
+
+    for (def x = 0; x < result.size(); x++) {
+        if (result[x].name == 'Administrator' || result[x].name =="Administrators") {
+            roleFound = true
+            def roleId = result[x].id
+            array << roleId
+            println("Proyecto -> ${projectKey}, Rol admin ID -> ${roleId}")
+
+            // Añadir el grupo "site admin" al rol de administrador
+            def payload = [
+                groupId: [adminGroupId]
+            ]
+
+            def response = post("/rest/api/3/project/${projectKey}/role/${roleId}")
+                .header("Content-Type", "application/json")
+                .body(payload)
+                .asJson()
+
+            if (response.status == 200) {
+                println("Grupo 'site admin' añadido correctamente al proyecto ${projectKey} con rol ID ${roleId}")
+            } else {
+                println("Error al añadir el grupo 'site admin' al proyecto ${projectKey} con rol ID ${roleId}: ${response.status} ${response.body}")
+            }
+        }
+    }
+
+    if (!roleFound) {
+        println("No se encontró el rol 'Administrator' para el proyecto ${projectKey}.")
+    }
+}
+
+// Retorna los IDs de los roles de administrador que se encontraron
+return array
