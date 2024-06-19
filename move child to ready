@@ -1,0 +1,61 @@
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+
+def issueKey = issue.key // 'MSB-1927' // Es una épica
+/*
+def issue
+def result = get('/rest/api/2/issue/' + issueKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (result.status == 200){
+    issue = result.body
+} else {
+    return "Failed to find issue: Status: ${result.status} ${result.body}"
+}
+*/
+def valor = issue.fields
+def status = valor.status.name
+
+if (status){
+    // Obtener los child issues de la épica
+    def epicLinkFieldId = 'customfield_10008' // Asegúrate de usar el ID correcto del campo de enlace de épicas
+    def jqlQuery = 'parent = ' + issueKey
+    def searchResult = get('/rest/api/2/search')
+            .header('Content-Type', 'application/json')
+            .queryString('jql', jqlQuery)
+            .queryString('fields', 'key,status')
+            .queryString('maxResults', 1000) // Puedes ajustar el número máximo de resultados según sea necesario
+            .asObject(Map)
+    
+    if (searchResult.status == 200){
+        issuechilds = searchResult.body.issues
+    } else {
+        return "Failed to find child issues: Status: ${searchResult.status} ${searchResult.body}"
+    }
+
+    // Iterar sobre los child issues y moverlos al estado "Ready"
+    def transitionId = '11' // Debes obtener el ID correcto de la transición para mover a "Ready"
+    issuechilds.each { childIssue ->
+        def childIssueKey = childIssue.key
+        def childStatus = childIssue.fields.status.name
+        
+        // Solo mover el issue si no ya está en "Ready"
+        if (childStatus != 'Ready') {
+            def transitionResult = post('/rest/api/2/issue/' + childIssueKey + '/transitions')
+                .header('Content-Type', 'application/json')
+                .body([
+                    transition: [
+                        id: transitionId
+                    ]
+                ])
+                .asString()
+            
+            if (transitionResult.status != 204) {
+                return "Failed to transition issue ${childIssueKey}: Status: ${transitionResult.status} ${transitionResult.body}"
+            }
+        }
+    }
+}
+
+return valor
