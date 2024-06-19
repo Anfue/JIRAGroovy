@@ -1,0 +1,50 @@
+def consulta = 'project = HST and Type = Rollouts and "HST Platform/Application: Issues Rollout[Dropdown]" IS NOT EMPTY and "LinkIssueMSB[Dropdown]" IS EMPTY'
+
+// Función para obtener el total de issues de una consulta
+def getTotalIssues(jqlQuery) {
+    def result = get('/rest/api/2/search')
+        .header('Content-Type', 'application/json')
+        .header("Accept", "application/json")
+        .queryString("jql", jqlQuery)
+        .asJson()
+
+    if (result.status == 200) {
+        return result.body
+    } else {
+        throw new RuntimeException("Failed to find issue: Status: ${result.status} ${result.body}")
+    }
+}
+
+// Obtener el total de issues para cada consulta
+def platforms = getTotalIssues(consulta)
+int totalIssues = platforms.object.total
+
+//crear for para comprobar el valor de HST con las epicas que tienen el field relleno
+
+for(def x= 0; x< totalIssues;x++){
+    def issueKey= platforms.object.issues[x].key
+    def issue
+    def result = get('/rest/api/2/issue/' + issueKey)
+            .header('Content-Type', 'application/json')
+            .asObject(Map)
+    if (result.status == 200){
+        issue =  result.body
+    } else {
+        return "Failed to find issue: Status: ${result.status} ${result.body}"
+    }
+    def tipoLink = issue.fields.issuelinks.type.name // "Blocks"
+    logger.info('issueKey->'+issueKey+', tipoLink->'+tipoLink)
+    if (tipoLink.contains("Blocks")){
+            logger.info('Entra en blocks')
+    def update = put("/rest/api/2/issue/${issueKey}") 
+        .queryString("overrideScreenSecurity", Boolean.TRUE) 
+        .header('Content-Type', 'application/json')
+        .body([
+            fields: [
+                    customfield_10822: [id : "13211" ]
+            ]
+        ])
+        .asString()
+        }
+       
+}
