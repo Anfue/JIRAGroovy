@@ -1,0 +1,178 @@
+def issueKey = issue.key
+/*
+def issueKey = 'HST-13528'
+def issue
+def result = get('/rest/api/2/issue/' + issueKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (result.status == 200) {
+    issue = result.body
+} else {
+    return "Failed to find issue: Status: ${result.status} ${result.body}"
+}
+*/
+def it_bug = '10218'   // Issue/Bug
+def it_marketRequest = '10217'   // Market Request
+def issueType
+if (issue.fields.customfield_10729) {
+    if (issue.fields.customfield_10729.id == '12708' ) issueType = it_bug
+    if (issue.fields.customfield_10729.id == '12707' ) issueType = it_marketRequest
+} else {
+    issueType = it_bug
+}
+
+def userID_flor = '64268b186b29c052ab2fa643'
+def projectKey
+def projectId
+def taskType
+def customfield_10506 = issue.fields.customfield_10506
+def labels = issue.fields.labels
+def tipo = issue.fields.issuetype
+def componente = issue.fields.components
+def versions = issue.fields.versions
+def customfield_10297 = issue.fields.customfield_10297 != null ? issue.fields.customfield_10297 : null
+def customfield_10109 = issue.fields.customfield_10109 != null ? issue.fields.customfield_10109 : [id : '10326']
+def fixVersions = issue.fields.fixVersions != null ? issue.fields.fixVersions : null
+def priority = issue.fields.priority
+def customfield_10343 = issue.fields.customfield_10343
+def customfield_10342 = issue.fields.customfield_10342
+def reporter = userID_flor
+
+def sprint = null
+int number = 2837
+// Proyecto específico para seat.code.dealers con sprint
+if (issue.fields.assignee.accountId == '712020:fa1c874a-f53a-489e-9b61-886400add6f8' && issueType == it_bug) { 
+    projectKey = 'WS'
+    sprint = [
+        [
+            id: number
+          
+        ]
+    ]
+    logger.info('projectKey->' + projectKey)
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    logger.info('projectId->' + projectId)
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+    logger.info('taskType->' + taskType)
+} else if (issue.fields.assignee.accountId == '712020:fa1c874a-f53a-489e-9b61-886400add6f8' && issueType == it_marketRequest) {
+    projectKey = 'WS'
+    sprint = [
+        [
+            id: number
+           
+        ]
+    ]
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}
+
+// Otros proyectos sin sprint
+else if ((issue.fields.assignee.accountId == '712020:5830e142-2b87-4bc3-b2a3-5f7ffdeae26d' || issue.fields.assignee.accountId =='712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a') && issueType == it_bug){  //seat.code.discovery
+    if (issue.fields.assignee.accountId =='712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a') reporter = '712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a'
+    projectKey = 'WC'
+    logger.info('projectKey->'+projectKey)
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    logger.info('projectId->'+projectId)
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+    logger.info('taskType->'+taskType)
+}else if ((issue.fields.assignee.accountId == '712020:5830e142-2b87-4bc3-b2a3-5f7ffdeae26d' || issue.fields.assignee.accountId =='712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a') && issueType == it_marketRequest){   //seat.code.discovery
+    if (issue.fields.assignee.accountId =='712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a') reporter = '712020:1cdc3873-a973-4557-84f7-fa5a3c020a0a'
+    projectKey = 'WC'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}else if (issue.fields.assignee.accountId == '712020:07434b81-6a9d-44c2-b29f-f89dd66159fc' && issueType == it_bug){  //seat.code.cc
+    projectKey = 'MCC'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+}else if (issue.fields.assignee.accountId == '712020:07434b81-6a9d-44c2-b29f-f89dd66159fc' && issueType == it_marketRequest){   //seat.code.cc
+    projectKey = 'MCC'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}else if (issue.fields.assignee.accountId == '712020:ae333d54-f370-4653-83c1-7cb75ce2a01b' && issueType == it_bug){  //Seat.code.ovs
+    projectKey = 'OVS'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+}else if (issue.fields.assignee.accountId == '712020:ae333d54-f370-4653-83c1-7cb75ce2a01b' && issueType == it_marketRequest){   //Seat.code.ovs
+    projectKey = 'OVS'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}else if (issue.fields.assignee.accountId == '712020:87cd5b8c-7a65-43e9-8273-8d23a6ce9345' && issueType == it_bug){  //seat.code.stocklocator
+    projectKey = 'SL'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+}else if (issue.fields.assignee.accountId == '712020:87cd5b8c-7a65-43e9-8273-8d23a6ce9345' && issueType == it_marketRequest){   //seat.code.stocklocator
+    projectKey = 'SL'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}else if (issue.fields.assignee.accountId == '62d556149189e98a2017dd5a' && issueType == it_bug){  //Private area suad
+    projectKey = 'PA'
+    projectId = '10054' //get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    logger.info('projectKey->'+projectKey+', projectId->'+projectId)
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Bug' }['id']
+}else if (issue.fields.assignee.accountId == '62d556149189e98a2017dd5a' && issueType == it_marketRequest){   //Private area suad
+    projectKey = 'PA'
+    projectId = get("/rest/api/2/project/${projectKey}").asObject(Map).body.id
+    taskType = get("/rest/api/2/issuetype/project?projectId=${projectId}").asObject(List).body.find { it['name'] == 'Story' }['id']
+}
+
+// Construcción de la nueva issue
+def fieldsMap = [
+    summary: issue.key + ' - ' + issue.fields.summary,
+    description: issue.fields.description,
+    project: [ key: projectKey ],
+    issuetype: [ id: taskType ],
+    customfield_10033: [id: "10024"], // Typology
+    assignee: [ accountId: reporter ],
+    labels: labels,
+    components: componente,
+    versions: versions,
+    customfield_10297: [id: "11134"], // Environment
+    fixVersions: fixVersions,
+    priority: [ id: priority.id ]
+]
+
+if (projectKey == 'WS' && sprint != null) {
+    fieldsMap.customfield_10021 = sprint[0].id  // Asegúrate de enviar solo el número
+}
+
+
+def createIssueResponse = post('/rest/api/2/issue')
+        .header('Content-Type', 'application/json')
+        .body([ fields: fieldsMap ])
+        .asObject(Map)
+
+// Manejo de la respuesta
+if (createIssueResponse.status == 201) {
+    def clonedIssueKey = createIssueResponse.body.key
+    logger.info "Cloned issue key: ${clonedIssueKey}"
+    def linkResponse = post("/rest/api/2/issueLink")
+            .header('Content-Type', 'application/json')
+            .body([
+                type: [ name: "Duplicate" ],
+                inwardIssue: [ key: issue.key ],
+                outwardIssue: [ key: clonedIssueKey ]
+            ]).asObject(Map)
+
+    if (linkResponse.status != 201) {
+        return "Failed to create issue link: Status: ${linkResponse.status} ${linkResponse.body}"
+    }
+
+    // Adjuntar archivos
+    if (issue.fields.attachment) {
+        issue.fields.attachment.each { attachment ->
+            def url = attachment.content
+            def is = Unirest.get(url).asBinary().body
+            def attachResponse = post("/rest/api/2/issue/${clonedIssueKey}/attachments")
+                    .header("X-Atlassian-Token", "no-check")
+                    .field("file", is, attachment.filename)
+                    .asObject(Map)
+            if (attachResponse.status != 200) {
+                return "Failed to attach file: Status: ${attachResponse.status} ${attachResponse.body}"
+            }
+        }
+    }
+    return "Cloned issue key: ${clonedIssueKey}"
+
+} else {
+    return "Failed to create cloned issue: Status: ${createIssueResponse.status} ${createIssueResponse.body}"
+}
