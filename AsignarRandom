@@ -1,0 +1,59 @@
+def issueKey = issue.key //'HST-10317'
+/*
+def issue
+def result = get('/rest/api/2/issue/' + issueKey)
+        .header('Content-Type', 'application/json')
+        .asObject(Map)
+if (result.status == 200){
+    issue = result.body
+} else {
+    return "Failed to find issue: Status: ${result.status} ${result.body}"
+}
+*/
+def asignado
+def Subarea
+if (issue.fields.customfield_10650) Subarea =  issue.fields.customfield_10650.id 
+def ChildWebsite
+if(issue.fields.customfield_10984) ChildWebsite = issue.fields.customfield_10984.id 
+
+// Get a random number between 0 and 1
+def  randomDecimal = Math.random()
+  // print the decimal * 100, rounded
+def finalInt = (randomDecimal * 3).round()
+int num = finalInt
+def arrayUsers = ["712020:a846a283-aaea-4966-a38d-bb63b33f6905",  // Veronica
+ "712020:7f209b9d-68b8-4e08-944d-f56e509ca64f", // Miriam
+ "642693dbb05b4e3e7dac1cc8"]
+
+if (Subarea == "12509" ) asignado = "712020:7723b90c-07ba-44c8-b081-800bf8a85e18" // Andres Sanchez
+if( Subarea == "12514" || Subarea == "12515" || Subarea == "12516" ) asignado = "5d3aa0bb70e3c90c952fb19d" // J-Ignacio Balaguer
+if (Subarea == "12512" ) asignado = "712020:b7c03a76-e1b2-45f3-8c54-12ce8868d4ec"   //Adriana Jover -> e-shop
+if (Subarea == "12511" ) asignado =  "642693dbb05b4e3e7dac1cc8" // Adriana Melero  -> PA
+if (Subarea == "12510" ) asignado =   "712020:164d762e-94c4-4cb3-9ae5-2c21ad667fd5" // Natalie Rückert SL
+//if (Subarea == "12508" ) asignado =   //Random -> Website
+if (ChildWebsite in['13692', '13693','13694','13695','13696','13697','13698'] ) asignado = "642693dbb05b4e3e7dac1cc8" // Adriana Melero  -> PA
+if (ChildWebsite in['13699', '13700','13701','13702','13703','13704']) asignado = "712020:a846a283-aaea-4966-a38d-bb63b33f6905"
+if (ChildWebsite == '13706') asignado =  "712020:7f209b9d-68b8-4e08-944d-f56e509ca64f"
+if (ChildWebsite == '13705') asignado = arrayUsers[num]
+logger.info('Scrtipt Assignar issue New Funtionality')
+
+def update = put("/rest/api/2/issue/${issueKey}") 
+    .queryString("overrideScreenSecurity", Boolean.TRUE) 
+    .header('Content-Type', 'application/json')
+    .body([
+        fields: [
+            assignee: [
+                accountId: asignado
+            ],
+            priority: [
+                id: "5"
+            ]
+        ]
+    ])
+    .asString()
+
+if (update.status == 204) { 
+    return 'Success'
+} else {
+    return "${update.status}: ${update.body}"
+}
