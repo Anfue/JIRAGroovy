@@ -1,0 +1,44 @@
+// Obtener los campos por ID
+const summaryField = getFieldById('summary');
+const templateField = getFieldById('customfield_11101'); // Selector
+const descriptionField = getFieldById("description"); // Campo de descripción
+const changedField = getChangeField(); // Detecta qué campo cambió
+
+// Obtener el valor seleccionado asegurándonos de que no sea null/undefined
+const selectedValue = templateField.getValue()?.id;
+
+// Mostrar información en la descripción para depuración
+summaryField.setDescription('Campo cambiado: ' + changedField.getId());
+templateField.setDescription('Template seleccionado ID: ' + selectedValue);
+
+// Función para establecer la plantilla en el campo de descripción
+function setTemplate(contentText) {
+    descriptionField.setValue({
+        "version": 1,
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": contentText,
+                        "marks": [{"type": "strong"}]
+                    }
+                ]
+            }
+        ]
+    });
+}
+
+// Aplicar la plantilla correspondiente
+if (selectedValue === '13876') {
+    setTemplate("TEMPLATE 1 - As a <type of user>");
+} else if (selectedValue === '13877') {
+    setTemplate("TEMPLATE 2 - As a <type of user>");
+} else  if (selectedValue === '13878') {
+    descriptionField.setValue(null);
+} else {
+    // Limpiar el campo de descripción si no hay una selección válida
+    descriptionField.setValue("");
+}
