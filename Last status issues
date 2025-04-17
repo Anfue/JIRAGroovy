@@ -1,0 +1,51 @@
+import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.Month
+
+// Array de issues a analizar (ejemplo)
+def issueKeys = ["HST-11119","HST-11120","HST-11121","HST-11122","HST-11123","HST-11124","HST-11125","HST-11126","HST-11127","HST-11129","HST-11130",
+"HST-11131","HST-11132","HST-11133","HST-11134","HST-11135","HST-11136","HST-11137","HST-11138"]
+
+def closedStatuses = ["Fixed", "Done", "Declined"]
+def reopenStatus = "Under review"
+
+def results = []
+
+issueKeys.each { issueKey ->
+    try {
+        def changelog = get("/rest/api/3/issue/${issueKey}/changelog")
+            .header('Content-Type', 'application/json')
+            .asObject(Map)
+            .body
+
+        def reopensDetails = changelog.values.findAll { history ->
+            history.items.any { item ->
+                item.field == "status" &&
+                closedStatuses.contains(item.fromString) &&
+                item.toString == reopenStatus
+            }
+        }?.collect { reopen ->
+            def createdDate = ZonedDateTime.parse(reopen.created)
+            def month = createdDate.getMonth()
+            return [
+                date: createdDate.toLocalDate().toString(),
+                month: month.toString()
+            ]
+        }
+
+        if (reopensDetails && reopensDetails.size() > 0) {
+            results.add([
+                issueKey: issueKey,
+                reopens: reopensDetails.size(),
+                reopenDates: reopensDetails
+            ])
+            logger.info("Issue ${issueKey} se reabrió ${reopensDetails.size()} veces en: ${reopensDetails*.month}")
+        }
+
+    } catch (Exception e) {
+        logger.warn("Error procesando ${issueKey}: ${e.message}")
+    }
+}
+
+return results
