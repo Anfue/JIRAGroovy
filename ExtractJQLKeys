@@ -1,0 +1,20 @@
+def jqlQuery = "project in (OBP,DLM) and issuetype = Epic"
+ 
+    def result = get('/rest/api/3/search')
+        .header('Content-Type', 'application/json')
+        .header("Accept", "application/json")
+        .queryString("jql", jqlQuery)
+        .asJson()
+ 
+    if (result.status == 200) {
+        def epics = result.body.object
+        def total = epics.total
+        def epicas = []
+        for (def x = 0; x < epics.issues.size(); x++) {
+        def issuee = epics.issues[x]
+        epicas << "${issuee.key} - ${issuee.fields.summary}"
+        }
+        return epicas.join('\n')
+    } else {
+        throw new RuntimeException("Failed to find issue: Status: ${result.status} ${result.body}")
+    }
