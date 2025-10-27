@@ -6,7 +6,7 @@ def pageId = "36339718"
 
 // Mapa de dominios (clave = lo que quieres reemplazar, valor = por qué lo reemplazas)
 def replacements = [
-    "https://zurichspain-sandbox-904.atlassian.net/wiki/search?" : "https://zurichspain-sandbox-904.atlassian.net/dosearchsite.action?",
+    "https://mysite-sandbox-904.atlassian.net/wiki/search?" : "https://mysite-sandbox-904.atlassian.net/dosearchsite.action?",
     "https://intranet.old.com"                                   : "https://intranet.new.com"
 ]
 
